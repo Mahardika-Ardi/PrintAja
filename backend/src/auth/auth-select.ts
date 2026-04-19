@@ -11,3 +11,10 @@ export const registerSelect = {
   updatedAt: true,
   isVerified: true,
 } as const;
+
+export const loginSelect = {
+  id: true,
+  email: true,
+  phone: true,
+  password: true,
+} as const;

@@ -4,7 +4,7 @@ import { LogInDto } from './dto/login.dto';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import { HashService } from 'src/common/hash/hash.service';
 import { AppError } from 'src/common/utils/app-error.utils';
-import { registerSelect } from './auth-select';
+import { loginSelect, registerSelect } from './auth-select';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
@@ -37,7 +37,7 @@ export class AuthService {
   async login(loginDto: LogInDto) {
     const check = await this.prisma.user.findFirst({
       where: { OR: [{ email: loginDto.email }, { phone: loginDto.phone }] },
-      select: { id: true, email: true, phone: true, password: true },
+      select: loginSelect,
     });
 
     if (!check) {
@@ -65,10 +65,8 @@ export class AuthService {
     const token = await this.jwt.signAsync(payload);
 
     return {
-      id: payload.id,
-      email: payload.email,
-      role: payload.role,
-      token,
+      access_token: token,
+      user: payload,
     };
   }
 }
