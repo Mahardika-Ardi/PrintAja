@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/common/prisma/prisma.service';
-import { userSelect } from './user.select';
+import { userSelect } from './user-select';
 import { HashService } from 'src/common/hash/hash.service';
 import { AppError } from 'src/common/utils/app-error.utils';
 
@@ -13,49 +12,37 @@ export class UsersService {
     private readonly hash: HashService,
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
-    const existing = await this.prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: createUserDto.email },
-          { phone: createUserDto.phone ?? undefined },
-        ],
-      },
-      select: { email: true, phone: true },
+  async findAll() {
+    return await this.prisma.user.findMany({ select: userSelect });
+  }
+
+  async findOne(id: string) {
+    return await this.prisma.user.findFirst({
+      where: { id },
+      select: userSelect,
+    });
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    const existing = await this.prisma.user.findUnique({
+      where: { phone: updateUserDto.phone },
+      select: { phone: true },
     });
 
-    if (existing?.email == createUserDto.email) {
-      throw AppError.conflict('Email', {
-        message: 'E - Mail is already used, try another!',
-      });
-    }
-    if (existing?.phone === createUserDto.phone) {
+    if (existing?.phone == updateUserDto.phone) {
       throw AppError.conflict('Phone', {
         message: 'Phone number is already used, try another!',
       });
     }
 
-    const hashedPassword = await this.hash.hash(createUserDto.password);
-
-    return await this.prisma.user.create({
-      data: { ...createUserDto, password: hashedPassword },
-      select: { ...userSelect },
+    return await this.prisma.user.update({
+      where: { id },
+      data: { ...updateUserDto },
+      select: userSelect,
     });
   }
 
-  findAll() {
-    return `This action returns all users`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
-
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
+  remove(id: string) {
     return `This action removes a #${id} user`;
   }
 }

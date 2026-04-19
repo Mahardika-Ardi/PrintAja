@@ -40,7 +40,7 @@ class AppError {
     );
   }
 
-  static unauthorized<T>(options?: ErrorOptions<T>) {
+  static unauthorized<T>(p0: string, options?: ErrorOptions<T>) {
     return createError(
       HttpStatus.UNAUTHORIZED,
       'UNAUTHORIZED',

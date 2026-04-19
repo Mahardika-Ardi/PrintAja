@@ -1,16 +1,16 @@
-import {
-  IsDate,
-  IsEmail,
-  IsEnum,
-  IsNotEmpty,
-  IsPhoneNumber,
-  IsString,
-  IsStrongPassword,
-} from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+  IsNotEmpty,
+  IsString,
+  IsEmail,
+  IsStrongPassword,
+  IsDate,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
 import { Gender } from 'generated/prisma/enums';
 
-export class CreateUserDto {
+export class RegisterDto {
   @IsNotEmpty({ message: 'Email is required' })
   @IsString({ message: 'Email must be a string' })
   @IsEmail({}, { message: 'Email must be a valid email address' })
@@ -27,21 +27,13 @@ export class CreateUserDto {
   )
   password!: string;
 
-  @IsNotEmpty({ message: 'Phone number is required' })
-  @IsString({ message: 'Phone number must be a string' })
-  @IsPhoneNumber('ID', {
-    message:
-      'Phone number must be a valid Indonesian phone number (e.g. +6281234567890)',
-  })
-  phone!: string;
-
   @IsNotEmpty({ message: 'First name is required' })
   @IsString({ message: 'First name must be a string' })
   firstName!: string;
 
-  @IsNotEmpty({ message: 'Last name is required' })
+  @IsOptional()
   @IsString({ message: 'Last name must be a string' })
-  lastName!: string;
+  lastName?: string;
 
   @Type(() => Date)
   @IsNotEmpty({ message: 'Birth date is required' })

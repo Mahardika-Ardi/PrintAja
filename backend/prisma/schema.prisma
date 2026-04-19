@@ -41,6 +41,7 @@ model User {
   role     Role    @default(CUSTOMER)
   gender   Gender
 
+  avatarUrl String?
   firstName String
   lastName  String?
   birthDate DateTime
