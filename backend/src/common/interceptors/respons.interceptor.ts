@@ -6,21 +6,54 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Response } from 'express';
+
+interface ControllerResponse<T> {
+  message?: string;
+  data: T;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp: string;
+}
 
 @Injectable()
-export class ResponsInterceptor<T> implements NestInterceptor<T, Response<T>> {
+export class ResponsInterceptor<T> implements NestInterceptor<
+  T | ControllerResponse<T>,
+  ApiResponse<T>
+> {
   intercept(
     context: ExecutionContext,
-    next: CallHandler<any>,
-  ): Observable<any> | Promise<Observable<any>> {
+    next: CallHandler<T | ControllerResponse<T>>,
+  ): Observable<ApiResponse<T>> {
     return next.handle().pipe(
-      map((data: T) => ({
-        success: true,
-        messsage: 'Request successfully',
-        data,
-        timestamp: new Date().toDateString(),
-      })),
+      map((response): ApiResponse<T> => {
+        if (this.isControllerResponse(response)) {
+          return {
+            success: true,
+            message: response.message ?? 'Request successful',
+            data: response.data,
+            timestamp: new Date().toISOString(),
+          };
+        }
+
+        return {
+          success: true,
+          message: 'Request successful',
+          data: response,
+          timestamp: new Date().toISOString(),
+        };
+      }),
+    );
+  }
+
+  private isControllerResponse<T>(
+    response: T | ControllerResponse<T>,
+  ): response is ControllerResponse<T> {
+    return (
+      response !== null && typeof response === 'object' && 'data' in response
     );
   }
 }

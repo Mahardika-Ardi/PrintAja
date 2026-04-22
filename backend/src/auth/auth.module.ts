@@ -2,8 +2,10 @@ import { Global, Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
-import { APP_GUARD } from '@nestjs/core';
-import { RolesGuard } from './guards/role.guard';
+import { JwtStrategy } from './helper/jwt.strategy';
+import { HashService } from 'src/common/hash/hash.service';
+import { MailService } from 'src/common/mail/mail.service';
+import { OtpService } from 'src/common/otp/otp.service';
 
 @Global()
 @Module({
@@ -15,6 +17,6 @@ import { RolesGuard } from './guards/role.guard';
     }),
   ],
   controllers: [AuthController],
-  providers: [{ provide: APP_GUARD, useClass: RolesGuard }, AuthService],
+  providers: [AuthService, JwtStrategy, HashService, MailService, OtpService],
 })
 export class AuthModule {}

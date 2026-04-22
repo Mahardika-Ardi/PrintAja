@@ -33,6 +33,11 @@ enum AddressLabel {
   OTHER
 }
 
+enum OtpType {
+  EMAIL_VERIFICATION
+  RESET_PASSWORD
+}
+
 model User {
   id       String  @id @default(uuid())
   email    String  @unique
@@ -41,7 +46,9 @@ model User {
   role     Role    @default(CUSTOMER)
   gender   Gender
 
-  avatarUrl String?
+  avatarUrl      String?
+  avatarPublicId String?
+
   firstName String
   lastName  String?
   birthDate DateTime
@@ -51,6 +58,7 @@ model User {
   isVerified Boolean @default(false)
 
   addresses Address[]
+  otps      Otp[]
 
   @@index([email])
   @@index([role])
@@ -73,4 +81,19 @@ model Address {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Otp {
+  id        String   @id @default(uuid())
+  userId    String
+  code      String
+  type      OtpType
+  isUsed    Boolean  @default(false)
+  expiredAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([code])
 }

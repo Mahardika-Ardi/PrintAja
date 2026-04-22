@@ -7,6 +7,9 @@ CREATE TYPE "Role" AS ENUM ('CUSTOMER', 'SHOP_OWNER', 'ADMIN');
 -- CreateEnum
 CREATE TYPE "AddressLabel" AS ENUM ('HOME', 'OFFICE', 'SCHOOL', 'OTHER');
 
+-- CreateEnum
+CREATE TYPE "OtpType" AS ENUM ('EMAIL_VERIFICATION', 'RESET_PASSWORD');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -15,6 +18,8 @@ CREATE TABLE "User" (
     "phone" TEXT,
     "role" "Role" NOT NULL DEFAULT 'CUSTOMER',
     "gender" "Gender" NOT NULL,
+    "avatarUrl" TEXT,
+    "avatarPublicId" TEXT,
     "firstName" TEXT NOT NULL,
     "lastName" TEXT,
     "birthDate" TIMESTAMP(3) NOT NULL,
@@ -41,6 +46,19 @@ CREATE TABLE "Address" (
     CONSTRAINT "Address_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Otp" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "type" "OtpType" NOT NULL,
+    "isUsed" BOOLEAN NOT NULL DEFAULT false,
+    "expiredAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Otp_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -56,5 +74,14 @@ CREATE INDEX "User_role_idx" ON "User"("role");
 -- CreateIndex
 CREATE INDEX "Address_userId_idx" ON "Address"("userId");
 
+-- CreateIndex
+CREATE INDEX "Otp_userId_idx" ON "Otp"("userId");
+
+-- CreateIndex
+CREATE INDEX "Otp_code_idx" ON "Otp"("code");
+
 -- AddForeignKey
 ALTER TABLE "Address" ADD CONSTRAINT "Address_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Otp" ADD CONSTRAINT "Otp_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

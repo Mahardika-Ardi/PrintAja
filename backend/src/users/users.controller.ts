@@ -5,6 +5,8 @@ import {
   Patch,
   Delete,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -12,6 +14,8 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { Role } from 'src/common/decorators/role.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { multerConfig } from 'src/common/config/multer.config';
 
 @Controller('users')
 export class UsersController {
@@ -20,25 +24,45 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Role('ADMIN')
   @Get('')
-  findAll() {
-    return this.usersService.findAll();
+  async findAll() {
+    const data = await this.usersService.findAll();
+    return {
+      message: 'Successfully getting all users',
+      data,
+    };
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @Get('me')
-  findOne(@CurrentUser('id') id: string) {
-    return this.usersService.findOne(id);
+  async findOne(@CurrentUser('id') id: string) {
+    console.error();
+
+    const data = await this.usersService.findOne(id);
+    return {
+      message: 'Succesfully getting user',
+      data,
+    };
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @Patch('me')
-  update(@CurrentUser('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  @UseInterceptors(FileInterceptor('avatar', multerConfig))
+  async update(
+    @CurrentUser('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    const data = await this.usersService.update(id, updateUserDto, file);
+    return {
+      message: 'Successfully updating user',
+      data,
+    };
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @Delete('me')
-  remove(@CurrentUser('id') id: string) {
-    return this.usersService.remove(id);
+  async remove(@CurrentUser('id') id: string) {
+    const data = await this.usersService.remove(id);
+    return { message: data };
   }
 }

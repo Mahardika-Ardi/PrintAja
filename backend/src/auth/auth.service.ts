@@ -6,6 +6,12 @@ import { HashService } from 'src/common/hash/hash.service';
 import { AppError } from 'src/common/utils/app-error.utils';
 import { loginSelect, registerSelect } from './auth-select';
 import { JwtService } from '@nestjs/jwt';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { OtpType } from 'generated/prisma/enums';
+import { OtpService } from 'src/common/otp/otp.service';
+import { MailService } from 'src/common/mail/mail.service';
+import { OtpDto } from './dto/token.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +19,8 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly hash: HashService,
     private readonly jwt: JwtService,
+    private readonly otp: OtpService,
+    private readonly mail: MailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -60,7 +68,8 @@ export class AuthService {
     const payload = {
       id: check.id,
       email: check.email,
-      role: check.phone,
+      phone: check.phone,
+      role: check.role,
     };
     const token = await this.jwt.signAsync(payload);
 
@@ -68,5 +77,112 @@ export class AuthService {
       access_token: token,
       user: payload,
     };
+  }
+
+  async forgotPassword(id: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id },
+      select: { email: true },
+    });
+
+    if (!user) {
+      throw AppError.notFound('User', {
+        message: 'No account found with this id',
+      });
+    }
+
+    const code = await this.otp.generate(id, OtpType.RESET_PASSWORD);
+    await this.mail.sendOtp(user.email, 'Reset Password', code);
+
+    return 'OTP code has been sent to your email';
+  }
+
+  async refreshOtp(id: string, refreshOtpDto: OtpDto) {
+    const user = await this.prisma.user.findFirst({
+      where: { id },
+      select: { email: true },
+    });
+
+    if (!user) {
+      throw AppError.notFound('User', {
+        message: 'No account found with this id',
+      });
+    }
+
+    const code = await this.otp.generate(id, refreshOtpDto.type);
+    const title = refreshOtpDto.type
+      .toLowerCase()
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+
+    await this.mail.sendOtp(user.email, title, code);
+
+    return 'OTP code has been sent to your email';
+  }
+
+  async resetPassword(id: string, resetPasswordDto: ResetPasswordDto) {
+    await this.otp.verify(resetPasswordDto.code, OtpType.RESET_PASSWORD, id);
+
+    const hashed = await this.hash.hash(resetPasswordDto.password);
+
+    await this.prisma.user.update({
+      where: { id },
+      data: { password: hashed },
+    });
+
+    return 'Password has been reset successfully';
+  }
+
+  async sendVerificationEmail(id: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id },
+      select: { email: true, isVerified: true },
+    });
+
+    if (!user) {
+      throw AppError.notFound('User', {
+        message: 'No account found with this id',
+      });
+    }
+    if (user.isVerified) {
+      throw AppError.badRequest({
+        message: 'Email is already verified',
+      });
+    }
+
+    const code = await this.otp.generate(id, OtpType.EMAIL_VERIFICATION);
+    const title = OtpType.EMAIL_VERIFICATION.toLowerCase()
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+
+    await this.mail.sendOtp(user.email, title, code);
+
+    return 'OTP code has been sent to your email';
+  }
+
+  async VerifyEmail(id: string, verifyEmailDto: VerifyEmailDto) {
+    const user = await this.prisma.user.findFirst({
+      where: { id },
+      select: { isVerified: true },
+    });
+
+    if (!user) {
+      throw AppError.notFound('User', {
+        message: 'No account found with this id',
+      });
+    }
+    if (user.isVerified) {
+      throw AppError.badRequest({
+        message: 'Email is already verified',
+      });
+    }
+
+    await this.otp.verify(verifyEmailDto.code, OtpType.EMAIL_VERIFICATION, id);
+    await this.prisma.user.update({
+      where: { id },
+      data: { isVerified: true },
+    });
+
+    return 'Seccessfully verified email';
   }
 }

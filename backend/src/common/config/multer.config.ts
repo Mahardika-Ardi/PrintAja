@@ -1,13 +1,18 @@
 import { BadRequestException } from '@nestjs/common';
-import { memoryStorage, Options } from 'multer';
+import { memoryStorage } from 'multer';
 import { Request } from 'express';
+import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
 type AllowedMimeType = (typeof ALLOWED_MIME_TYPES)[number];
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const fileFilter: Options['fileFilter'] = (req: Request, file, callback) => {
+const fileFilter: MulterOptions['fileFilter'] = (
+  req: Request,
+  file,
+  callback,
+) => {
   const isValidMime = ALLOWED_MIME_TYPES.includes(
     file.mimetype as AllowedMimeType,
   );
@@ -16,15 +21,16 @@ const fileFilter: Options['fileFilter'] = (req: Request, file, callback) => {
   const isValidExt = ext && allowedExt.includes(ext);
 
   if (!isValidMime || !isValidExt) {
-    throw new BadRequestException(
-      'Invalid file type. Only JPG, PNG, WEBP allowed',
+    return callback(
+      new BadRequestException('Invalid file type. Only JPG, PNG, WEBP allowed'),
+      false,
     );
   }
 
   callback(null, true);
 };
 
-export const multerConfig: Options = {
+export const multerConfig: MulterOptions = {
   storage: memoryStorage(),
   limits: {
     fileSize: MAX_FILE_SIZE,

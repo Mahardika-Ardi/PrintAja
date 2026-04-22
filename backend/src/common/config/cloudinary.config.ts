@@ -1,8 +1,4 @@
-import {
-  v2 as cloudinary,
-  UploadApiOptions,
-  UploadApiResponse,
-} from 'cloudinary';
+import { v2 as cloudinary, UploadApiOptions } from 'cloudinary';
 import {
   BadRequestException,
   InternalServerErrorException,
@@ -14,12 +10,16 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+type CloudinaryResult = {
+  url: string;
+  public_id: string;
+};
 const DEFAULT_FOLDER = 'PrintAja/Avatar';
 
 export const uploadToCloudinary = async (
   file: Express.Multer.File,
   options?: UploadApiOptions,
-): Promise<UploadApiResponse> => {
+): Promise<CloudinaryResult> => {
   if (!file) {
     throw new BadRequestException('File is required');
   }
@@ -33,6 +33,7 @@ export const uploadToCloudinary = async (
       {
         folder: DEFAULT_FOLDER,
         resource_type: 'image',
+        public_id: `profile_${Date.now()}`,
         ...options,
       },
       (error, result) => {
@@ -50,7 +51,7 @@ export const uploadToCloudinary = async (
           );
         }
 
-        resolve(result);
+        resolve({ url: result.secure_url, public_id: result.public_id });
       },
     );
 

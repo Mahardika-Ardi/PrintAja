@@ -17,4 +17,5 @@ export const loginSelect = {
   email: true,
   phone: true,
   password: true,
+  role: true,
 } as const;
