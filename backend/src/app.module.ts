@@ -8,6 +8,7 @@ import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './common/mail/mail.module';
 import { OtpService } from './common/otp/otp.service';
+import { ShopsModule } from './shops/shops.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { OtpService } from './common/otp/otp.service';
     HealthModule,
     AuthModule,
     MailModule,
+    ShopsModule,
   ],
   controllers: [AppController],
   providers: [AppService, OtpService],
